@@ -33,6 +33,30 @@ object Calculator {
           case _ => exp
         }
       }
+      case SubtractOp(le, re) => {
+        swap(simplify(le), simplify(re)) match {
+          case (Variable(s1), Variable(s2)) if s1 == s2 => 0
+          case _ => exp
+        }
+      }
+      case MultiplyOp(le, re) => {
+        swap(simplify(le), simplify(re)) match {
+          case (Variable(s1), 1) => s1
+          case _ => exp
+        }
+      }
+      case DivideOp(le, re) => {
+        (simplify(le), simplify(re)) match {
+          case (Variable(s1), 1) => s1
+          case (MultiplyOp(l1, r1), Variable(s1)) => {
+            (swap(l1, r1)) match {
+              case (Variable(l11), r11: Expr) if l11 == s1 => r11
+              case _ => exp
+            }
+          }
+          case _ => exp
+        }
+      }
       case _ => exp
     }
   }
@@ -53,7 +77,9 @@ object Calculator {
 
     val testCases1 = Map(
       AddOp(Number(0), Variable("x")) -> Variable("x"),
-      AddOp(Variable("x"), Number(0)) -> Variable("x")
+      AddOp(Variable("x"), Number(0)) -> Variable("x"),
+      AddOp(Variable("y"), Variable("y")) -> MultiplyOp(Variable("y"),Number(2)),
+      AddOp(MultiplyOp(Variable("y"), Number(2)), MultiplyOp(Number(8), Variable("y"))) -> MultiplyOp(AddOp(Number(2.0),Number(8.0)),Variable("y"))
     )
     
     println("====================")
