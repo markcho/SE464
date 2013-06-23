@@ -37,9 +37,9 @@ object Calculator {
       MultiplyOp(Number(10), Number(1)) -> 10,
       MultiplyOp(Number(10), Number(0.2)) -> 2,
       DivideOp(Number(10), Number(4)) -> 2.5,
-      DivideOp(Number(5), Number(-1)) -> -5
+      DivideOp(Number(5), Number(-1)) -> -5,
 
-
+      AddOp(AddOp(AddOp(Number(1), Number(2)), Number(3)), AddOp(Number(4), Number(5))) -> 15
     )
 
     testCases map { pair =>
