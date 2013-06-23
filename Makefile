@@ -3,10 +3,10 @@
 all: expression run
 
 expression: Expression.scala
-	scalac Expression.scala
+	scalac Expression.scala Calculator.scala
 
 run: expression
-	scala Calculator
+	scala se464.calculator.Calculator
 
 clean:
 	rm *.class
