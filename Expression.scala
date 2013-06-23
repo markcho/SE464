@@ -25,11 +25,20 @@ object Calculator {
   }
 
   def main(args: Array[String]): Unit = {
+    println("====================")
     println("Running Test Cases")
 
     val testCases = Map(
       AddOp(Number(1), Number(2)) -> 3,
-      AddOp(Number(2), Number(3)) -> 5
+      AddOp(Number(2), Number(-3)) -> -1,
+      SubtractOp(Number(3), Number(5)) -> -2,
+      SubtractOp(Number(3), Number(-2)) -> 5,
+      MultiplyOp(Number(5), Number(2)) -> 10,
+      MultiplyOp(Number(10), Number(1)) -> 10,
+      MultiplyOp(Number(10), Number(0.2)) -> 2,
+      DivideOp(Number(10), Number(4)) -> 2.5,
+      DivideOp(Number(5), Number(-1)) -> -5
+
     )
 
     //testCases.map(pair => eval(pair._1) -> pair._2).foreach(println)
@@ -42,5 +51,6 @@ object Calculator {
     }
 
     println("Completed Test Cases")
+    println("====================")
   }
 }
