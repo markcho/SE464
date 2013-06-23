@@ -14,42 +14,55 @@ object Calculator {
       }
     }
 
+
     exp match {
       case AddOp(le, re) => {
-        swap(simplify(le), simplify(re)) match {
+        val sw = swap(simplify(le), simplify(re))
+        lazy val se = AddOp(sw._1, sw._2)
+            
+        sw match {
           case (Variable(s), Number(0)) => s
           case (Variable(s1), Variable(s2)) if s1 == s2 => MultiplyOp(s1, 2)
           case (MultiplyOp(l1, r1), MultiplyOp(l2, r2)) => {
             (swap(l1, r1), swap(l2, r2)) match {
-              case ((Variable(l11), r11: Expr), (Variable(l12), r12: Expr)) if l11 == l12 => MultiplyOp(AddOp(r11, r12), l11)
-              case _ => exp
+              case ((Variable(l11), r11: Expr), (Variable(l12), r12: Expr)) if l11 == l12 => MultiplyOp(simplify(AddOp(r11, r12)), l11)
+              case _ => se
             }
           }
-          case _ => exp
+          case _ => se
         }
       }
       case SubtractOp(le, re) => {
-        swap(simplify(le), simplify(re)) match {
+        val sw = swap(simplify(le), simplify(re))
+        lazy val se = SubtractOp(sw._1, sw._2)
+        
+        sw match {
           case (Variable(s1), Variable(s2)) if s1 == s2 => 0
-          case _ => exp
+          case _ => se
         }
       }
       case MultiplyOp(le, re) => {
-        swap(simplify(le), simplify(re)) match {
+        val sw = swap(simplify(le), simplify(re))
+        lazy val se = MultiplyOp(sw._1, sw._2)
+            
+        sw match {
           case (Variable(s1), Number(1)) => s1
-          case _ => exp
+          case _ => se
         }
       }
       case DivideOp(le, re) => {
-        (simplify(le), simplify(re)) match {
+        val sw = (simplify(le), simplify(re))
+        lazy val se = DivideOp(sw._1, sw._2)
+            
+        sw match {
           case (Variable(s1), Number(1)) => s1
           case (MultiplyOp(l1, r1), Variable(s1)) => {
             (swap(l1, r1)) match {
               case (Variable(l11), r11: Expr) if l11 == s1 => r11
-              case _ => exp
+              case _ => se
             }
           }
-          case _ => exp
+          case _ => se
         }
       }
       case _ => exp
@@ -70,15 +83,17 @@ object Calculator {
 
   def main(args: Array[String]): Unit = {
     val testCases1: List[(Expr, Expr)] = List(
-      AddOp(Number(0), Variable("x")) -> Variable("x"),
-      AddOp(Variable("x"), Number(0)) -> Variable("x"),
-      AddOp(Variable("y"), Variable("y")) -> MultiplyOp(Variable("y"),Number(2)),
+      AddOp(0, "x") -> "x",
+      AddOp("x", 0) -> "x",
+      AddOp("y", "y") -> MultiplyOp("y", 2),
       AddOp(MultiplyOp("y", 2), MultiplyOp(8, "y")) -> MultiplyOp(AddOp(2.0, 8.0), "y"),
+      SubtractOp("x", "x") -> 0,
       DivideOp(MultiplyOp("y", 2), "y") -> 2,
       DivideOp("x", 1) -> "x",
       DivideOp(1, "x") -> DivideOp(1, "x"),
       MultiplyOp(1, "x") -> "x",
-      MultiplyOp("x", 1) -> "x"
+      MultiplyOp("x", 1) -> "x",
+      AddOp(MultiplyOp("y", AddOp("x", 0)), MultiplyOp(SubtractOp("y", "y"), "y")) -> MultiplyOp("x", "y")
     )
 
     println("===========================")
