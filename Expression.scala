@@ -96,6 +96,7 @@ object Calculator {
       println("Expected: " + pair._2 + " | Calculated: " + pair._1)
     }
 
+    println("===========================")
     println("Completed Test Cases")
     println("===========================")
   }
