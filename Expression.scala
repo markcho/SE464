@@ -1,10 +1,10 @@
-abstract class Expr
+sealed trait Expr
 
 case class Number(val value: Double) extends Expr
 case class Variable(val variable: String) extends Expr
 
-abstract class BinaryOp(val left: Expr, val right: Expr) extends Expr
-  
+sealed abstract class BinaryOp(val left: Expr, val right: Expr) extends Expr
+
 case class AddOp(val l: Expr, val r: Expr) extends BinaryOp(l, r)
 case class SubtractOp(val l: Expr, val r: Expr) extends BinaryOp(l, r)
 case class MultiplyOp(val l: Expr, val r: Expr) extends BinaryOp(l, r)
@@ -17,10 +17,10 @@ object Calculator {
       case Number(v) => v
       case Variable(v) => 999
 
-      case AddOp(Number(l), Number(r)) => l + r
-      case SubtractOp(Number(l), Number(r)) => l - r
-      case MultiplyOp(Number(l), Number(r)) => l * r
-      case DivideOp(Number(l), Number(r)) => l / r
+      case AddOp(left, right) => eval(left) + eval(right)
+      case SubtractOp(left, right) => eval(left) - eval(right)
+      case MultiplyOp(left, right) => eval(left) * eval(right)
+      case DivideOp(left, right) => eval(left) / eval(right)
     }
   }
 
@@ -39,9 +39,9 @@ object Calculator {
       DivideOp(Number(10), Number(4)) -> 2.5,
       DivideOp(Number(5), Number(-1)) -> -5
 
+
     )
 
-    //testCases.map(pair => eval(pair._1) -> pair._2).foreach(println)
     testCases map { pair =>
       eval(pair._1) -> pair._2
     } filter { pair =>
