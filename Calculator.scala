@@ -56,20 +56,20 @@ object Calculator {
     }
   }
 
-  def eval(exp: Expr): Double = {
+  def eval(exp: Expr, variables: Map[String, Double] = Map[String, Double]()): Double = {
     exp match {
       case Number(v) => v
-      case Variable(v) => 999
-
-      case AddOp(left, right) => eval(left) + eval(right)
-      case SubtractOp(left, right) => eval(left) - eval(right)
-      case MultiplyOp(left, right) => eval(left) * eval(right)
-      case DivideOp(left, right) => eval(left) / eval(right)
+      case Variable(v) => variables.get(v).get
+      case AddOp(left, right) => eval(left, variables) + eval(right, variables)
+      case SubtractOp(left, right) => eval(left, variables) - eval(right, variables)
+      case MultiplyOp(left, right) => eval(left, variables) * eval(right, variables)
+      case DivideOp(left, right) => eval(left, variables) / eval(right, variables)
     }
   }
 
   def main(args: Array[String]): Unit = {
-    val testCases1: List[(Expr, Expr)] = List(
+
+    val simplifyTestCases: List[(Expr, Expr)] = List(
       AddOp(Number(0), Variable("x")) -> Variable("x"),
       AddOp(Variable("x"), Number(0)) -> Variable("x"),
       AddOp(Variable("y"), Variable("y")) -> MultiplyOp(Variable("y"),Number(2)),
@@ -81,21 +81,7 @@ object Calculator {
       MultiplyOp("x", 1) -> "x"
     )
 
-    println("===========================")
-    println("Running Simplify Test Cases")
-
-    testCases1 map { pair =>
-      simplify(pair._1) -> pair._2
-    } filter { pair =>
-      pair._1 != pair._2
-    } foreach { pair =>
-      println("Expected: " + pair._2 + " | Calculated: " + pair._1)
-    }
-
-    println("===========================")
-    println("Running Evaluate Test Cases")
-
-    val testCases = List(
+    val evaluateTestCases = List(
       AddOp(1,2) -> 3,
       AddOp(2,-3) -> -1,
       SubtractOp(3,5) -> -2,
@@ -109,8 +95,49 @@ object Calculator {
       AddOp(AddOp(AddOp(1, 2), 3), AddOp(4, 5)) -> 15
     )
 
-    testCases map { pair =>
+    val variableTestCases = List(
+      AddOp("x", 5) -> 6,
+      AddOp(3, "w") -> 2,
+      MultiplyOp("w", 5) -> -5,
+      MultiplyOp("z", "y") -> 10
+    )
+
+    val variableMapping = Map[String, Double](
+      "w" -> -1,
+      "x" -> 1,
+      "y" -> 2,
+      "z" -> 5
+    )
+
+    println("===========================")
+    println("Running Simplify Test Cases")
+
+    simplifyTestCases map { pair =>
+      simplify(pair._1) -> pair._2
+    } filter { pair =>
+      pair._1 != pair._2
+    } foreach { pair =>
+      println("Expected: " + pair._2 + " | Calculated: " + pair._1)
+    }
+
+    println("===========================")
+    println("Running Evaluate Test Cases")
+
+
+    evaluateTestCases map { pair =>
       eval(pair._1) -> pair._2
+    } filter { pair =>
+      pair._1 != pair._2
+    } foreach { pair =>
+      println("Expected: " + pair._2 + " | Calculated: " + pair._1)
+    }
+
+    println("===========================")
+    println("Running Variable Test Cases")
+
+
+    variableTestCases map { pair =>
+      eval(pair._1, variableMapping) -> pair._2
     } filter { pair =>
       pair._1 != pair._2
     } foreach { pair =>
