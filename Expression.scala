@@ -1,3 +1,5 @@
+import scala.language.implicitConversions
+
 sealed trait Expr
 
 case class Number(val value: Double) extends Expr
@@ -25,21 +27,24 @@ object Calculator {
   }
 
   def main(args: Array[String]): Unit = {
+    implicit def doubleToNumber(x: Double) = Number(x)
+    implicit def stringToVariable(x: String) = Variable(x)
+
     println("====================")
     println("Running Test Cases")
 
-    val testCases = Map(
-      AddOp(Number(1), Number(2)) -> 3,
-      AddOp(Number(2), Number(-3)) -> -1,
-      SubtractOp(Number(3), Number(5)) -> -2,
-      SubtractOp(Number(3), Number(-2)) -> 5,
-      MultiplyOp(Number(5), Number(2)) -> 10,
-      MultiplyOp(Number(10), Number(1)) -> 10,
-      MultiplyOp(Number(10), Number(0.2)) -> 2,
-      DivideOp(Number(10), Number(4)) -> 2.5,
-      DivideOp(Number(5), Number(-1)) -> -5,
+    val testCases = List(
+      AddOp(1,2) -> 3,
+      AddOp(2,-3) -> -1,
+      SubtractOp(3,5) -> -2,
+      SubtractOp(3,-2) -> 5,
+      MultiplyOp(5,2) -> 10,
+      MultiplyOp(10,1) -> 10,
+      MultiplyOp(10,0.2) -> 2,
+      DivideOp(10,4) -> 2.5,
+      DivideOp(5,-1) -> -5,
 
-      AddOp(AddOp(AddOp(Number(1), Number(2)), Number(3)), AddOp(Number(4), Number(5))) -> 15
+      AddOp(AddOp(AddOp(1, 2), 3), AddOp(4, 5)) -> 15
     )
 
     testCases map { pair =>
