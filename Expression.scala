@@ -1,3 +1,5 @@
+import scala.language.implicitConversions
+
 sealed trait Expr
 
 case class Number(val value: Double) extends Expr
@@ -18,7 +20,7 @@ object Calculator {
         case _ => mat
       }
     }
-    
+
     exp match {
       case AddOp(le, re) => {
         swap(simplify(le), simplify(re)) match {
@@ -60,7 +62,7 @@ object Calculator {
       case _ => exp
     }
   }
-  
+
   def eval(exp: Expr): Double = {
     exp match {
       case Number(v) => v
@@ -74,6 +76,8 @@ object Calculator {
   }
 
   def main(args: Array[String]): Unit = {
+    implicit def doubleToNumber(x: Double) = Number(x)
+    implicit def stringToVariable(x: String) = Variable(x)
 
     val testCases1 = Map(
       AddOp(Number(0), Variable("x")) -> Variable("x"),
@@ -81,8 +85,8 @@ object Calculator {
       AddOp(Variable("y"), Variable("y")) -> MultiplyOp(Variable("y"),Number(2)),
       AddOp(MultiplyOp(Variable("y"), Number(2)), MultiplyOp(Number(8), Variable("y"))) -> MultiplyOp(AddOp(Number(2.0),Number(8.0)),Variable("y"))
     )
-    
-    println("====================")
+
+    println("===========================")
     println("Running Simplify Test Cases")
 
     testCases1 map { pair =>
@@ -93,26 +97,21 @@ object Calculator {
       println("Expected: " + pair._2 + " | Calculated: " + pair._1)
     }
 
-    println("Completed Test Cases")
-    
+    println("===========================")
+    println("Running Evaluate Test Cases")
 
+    val testCases = List(
+      AddOp(1,2) -> 3,
+      AddOp(2,-3) -> -1,
+      SubtractOp(3,5) -> -2,
+      SubtractOp(3,-2) -> 5,
+      MultiplyOp(5,2) -> 10,
+      MultiplyOp(10,1) -> 10,
+      MultiplyOp(10,0.2) -> 2,
+      DivideOp(10,4) -> 2.5,
+      DivideOp(5,-1) -> -5,
 
-      
-    println("====================")
-    println("Running Test Cases")
-
-    val testCases = Map(
-      AddOp(Number(1), Number(2)) -> 3,
-      AddOp(Number(2), Number(-3)) -> -1,
-      SubtractOp(Number(3), Number(5)) -> -2,
-      SubtractOp(Number(3), Number(-2)) -> 5,
-      MultiplyOp(Number(5), Number(2)) -> 10,
-      MultiplyOp(Number(10), Number(1)) -> 10,
-      MultiplyOp(Number(10), Number(0.2)) -> 2,
-      DivideOp(Number(10), Number(4)) -> 2.5,
-      DivideOp(Number(5), Number(-1)) -> -5,
-
-      AddOp(AddOp(AddOp(Number(1), Number(2)), Number(3)), AddOp(Number(4), Number(5))) -> 15
+      AddOp(AddOp(AddOp(1, 2), 3), AddOp(4, 5)) -> 15
     )
 
     testCases map { pair =>
@@ -124,5 +123,6 @@ object Calculator {
     }
 
     println("Completed Test Cases")
+    println("===========================")
   }
 }
