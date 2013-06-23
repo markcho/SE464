@@ -13,6 +13,9 @@ case class MultiplyOp(val l: Expr, val r: Expr) extends BinaryOp(l, r)
 case class DivideOp(val l: Expr, val r: Expr) extends BinaryOp(l, r)
 
 object Calculator {
+  implicit def doubleToNumber(x: Double) = Number(x)
+  implicit def stringToVariable(x: String) = Variable(x)
+
   def simplify(exp: Expr): Expr = {
     def swap(mat: (Expr, Expr)): (Expr, Expr) = {
       mat match {
@@ -24,11 +27,35 @@ object Calculator {
     exp match {
       case AddOp(le, re) => {
         swap(simplify(le), simplify(re)) match {
-          case (Variable(s), Number(0)) => Variable(s)
-          case (Variable(s1), Variable(s2)) if s1 == s2 => MultiplyOp(Variable(s1), Number(2))
+          case (Variable(s), Number(0)) => s
+          case (Variable(s1), Variable(s2)) if s1 == s2 => MultiplyOp(s1, 2)
           case (MultiplyOp(l1, r1), MultiplyOp(l2, r2)) => {
             (swap(l1, r1), swap(l2, r2)) match {
-              case ((Variable(l11), r11: Expr), (Variable(l12), r12: Expr)) if l11 == l12 => MultiplyOp(AddOp(r11, r12), Variable(l11))
+              case ((Variable(l11), r11: Expr), (Variable(l12), r12: Expr)) if l11 == l12 => MultiplyOp(AddOp(r11, r12), l11)
+              case _ => exp
+            }
+          }
+          case _ => exp
+        }
+      }
+      case SubtractOp(le, re) => {
+        swap(simplify(le), simplify(re)) match {
+          case (Variable(s1), Variable(s2)) if s1 == s2 => 0
+          case _ => exp
+        }
+      }
+      case MultiplyOp(le, re) => {
+        swap(simplify(le), simplify(re)) match {
+          case (Variable(s1), Number(1)) => s1
+          case _ => exp
+        }
+      }
+      case DivideOp(le, re) => {
+        (simplify(le), simplify(re)) match {
+          case (Variable(s1), Number(1)) => s1
+          case (MultiplyOp(l1, r1), Variable(s1)) => {
+            (swap(l1, r1)) match {
+              case (Variable(l11), r11: Expr) if l11 == s1 => r11
               case _ => exp
             }
           }
@@ -52,12 +79,16 @@ object Calculator {
   }
 
   def main(args: Array[String]): Unit = {
-    implicit def doubleToNumber(x: Double) = Number(x)
-    implicit def stringToVariable(x: String) = Variable(x)
-
-    val testCases1 = Map(
+    val testCases1: List[(Expr, Expr)] = List(
       AddOp(Number(0), Variable("x")) -> Variable("x"),
-      AddOp(Variable("x"), Number(0)) -> Variable("x")
+      AddOp(Variable("x"), Number(0)) -> Variable("x"),
+      AddOp(Variable("y"), Variable("y")) -> MultiplyOp(Variable("y"),Number(2)),
+      AddOp(MultiplyOp("y", 2), MultiplyOp(8, "y")) -> MultiplyOp(AddOp(2.0, 8.0), "y"),
+      DivideOp(MultiplyOp("y", 2), "y") -> 2,
+      DivideOp("x", 1) -> "x",
+      DivideOp(1, "x") -> DivideOp(1, "x"),
+      MultiplyOp(1, "x") -> "x",
+      MultiplyOp("x", 1) -> "x"
     )
 
     println("===========================")
