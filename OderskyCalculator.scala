@@ -13,19 +13,13 @@ trait Base {
   def Var(s: String): exp
   
   trait Exp {
-    def eval(): Exp
+    def eval(): Double
   }
   
   trait Num extends Exp {
     var value: Double = _
     
-    def eval(): Exp = Num(value)
-  }
-  
-  trait Var extends Exp {
-    var term: String = _
-    
-    def eval(): Exp = Var(term)
+    def eval() = value
   }
 }
 
@@ -33,64 +27,39 @@ trait Base {
  * OPERATORS
  */
 
-trait BasePlus extends Base {
-  trait Plus extends Exp {
-    var left: exp = _
-    var right: exp = _
-    
-    override def eval() = {
-      (left.eval(), right.eval()) match {
-        case (l: Num, r: Num) => Num(l.value + r.value)
-        case _ => this
-      }
-    }
-  }
-}
-
-trait BaseNeg extends Base {
+trait BaseOperators extends Base {
+  type exp <: Exp
+  
   trait Neg extends Exp {
     var expr: exp = _
     
-    override def eval() = {
-      expr.eval() match {
-        case e: Num => Num(-e.value)
-        case _ => this
-      }
-    }
+    override def eval() = -expr.eval()
   }
-}
-
-trait BaseMult extends Base {
-  trait Mult extends Exp {
+  
+  trait Binary extends Exp {
     var left: exp = _
     var right: exp = _
-    
-    override def eval() = {
-      (left.eval(), right.eval()) match {
-        case (l: Num, r: Num) => Num(l.value * r.value)
-        case _ => this
-      }
-    }
   }
-}
-
-trait BaseDiv extends Base {
-  trait Div extends Exp {
-    var left: exp = _
-    var right: exp = _
-    
-    override def eval() = {
-      (left.eval(), right.eval()) match {
-        case (l: Num, r: Num) => Num(l.value / r.value)
-        case _ => this
-      }
-    }
+  
+  trait Plus extends Binary {
+    override def eval() = left.eval() + right.eval()
   }
-}
-
-trait BaseOperators extends BasePlus with BaseNeg with BaseDiv with BaseMult {
-  def Plus(l: exp, r: exp): exp
+  
+  trait Sub extends Binary {
+    override def eval() = left.eval() - right.eval()
+  }
+  
+  trait Mult extends Binary {
+    override def eval() = left.eval() * right.eval()
+  }
+  
+  trait Div extends Binary {
+    override def eval() = left.eval() / right.eval()
+  }
+  
   def Neg(e: exp): exp
+  def Plus(l: exp, r: exp): exp
+  def Sub(l: exp, r: exp): exp
   def Mult(l: exp, r: exp): exp
   def Div(l: exp, r: exp): exp
 }
@@ -109,10 +78,6 @@ trait BasePrinter extends Base {
   trait Num extends super.Num with Exp {
     override def print(): String = value.toString()
   }
-  
-  trait Var extends super.Var with Exp {
-    override def print(): String = term
-  }
 }
 
 trait OperatorsPrinter extends BaseOperators with BasePrinter {
@@ -120,18 +85,21 @@ trait OperatorsPrinter extends BaseOperators with BasePrinter {
   
   protected def pb(n: exp): String = {
     n match {
-      case v: Num => v.print()
-      case v: Var => v.print()
-      case _ => "(" + n.print() + ")"
+      case b: Binary => "(" + b.print() + ")"
+      case v => v.print()
     }
+  }
+  
+  trait Neg extends super.Neg with Exp {
+    override def print(): String = "-" + pb(expr)
   }
   
   trait Plus extends super.Plus with Exp {
     override def print(): String = pb(left) + " + " + pb(right)
   }
   
-  trait Neg extends super.Neg with Exp {
-    override def print(): String = "-" + pb(expr)
+  trait Sub extends super.Sub with Exp {
+    override def print(): String = pb(left) + " - " + pb(right)
   }
   
   trait Mult extends super.Mult with Exp {
@@ -143,11 +111,89 @@ trait OperatorsPrinter extends BaseOperators with BasePrinter {
   }
 }
 
+
+
+/**
+ * VARIABLES
+ */
+
+trait BaseVariable extends BasePrinter {
+  type exp <: Exp
+  
+  def Num(d: Double): exp
+  def Var(s: String): exp
+  
+  trait Exp extends super.Exp {
+    def compress(): exp
+  }
+  
+  trait Num extends Exp with super.Num {
+    override def compress() = Num(value)
+  }
+  
+  trait Var extends Exp {
+    var term: String = _
+    
+    override def print(): String = term
+    override def compress() = Var(term)
+    override def eval() = 0
+  }
+}
+
+trait OperatorsVariable extends OperatorsPrinter with BaseVariable {
+  type exp <: Exp
+  
+  trait Neg extends super.Neg with Exp {
+    override def compress() = {
+      expr.compress() match {
+        case e: Num => Num(-e.value)
+        case v => Neg(v)
+      }
+    }
+  }
+  
+  trait Plus extends super.Plus with Exp {
+    override def compress(): exp = {
+      (left.compress(), right.compress()) match {
+        case (l: Num, r: Num) => Num(eval())
+        case v => Plus(v._1, v._2)
+      }
+    }
+  }
+  
+  trait Sub extends super.Sub with Exp {
+    override def compress(): exp = {
+      (left.compress(), right.compress()) match {
+        case (l: Num, r: Num) => Num(eval())
+        case v => Sub(v._1, v._2)
+      }
+    }
+  }
+  
+  trait Mult extends super.Mult with Exp {
+    override def compress() = {
+      (left.compress(), right.compress()) match {
+        case (l: Num, r: Num) => Num(eval())
+        case v => Mult(v._1, v._2)
+      }
+    }
+  }
+  
+  trait Div extends super.Div with Exp {
+    override def compress() = {
+      (left.compress(), right.compress()) match {
+        case (l: Num, r: Num) => Num(eval())
+        case v => Div(v._1, v._2)
+      }
+    }
+  }
+}
+
 /**
  * IMPLEMENTATION
  */
 
-object OderskyCalculator extends OperatorsPrinter {
+object OderskyCalculator extends OperatorsVariable {
   implicit def numToNum(d: Double): Num = Num(d)
   implicit def strToVar(s: String): Var = Var(s)
   
@@ -157,23 +203,25 @@ object OderskyCalculator extends OperatorsPrinter {
   def Var(t: String) = new Var { term = t }
   def Neg(e: exp) = new Neg { expr = e }
   def Plus(l: exp, r: exp) = new Plus { left = l; right = r }
+  def Sub(l: exp, r: exp) = new Sub { left = l; right = r }
   def Mult(l: exp, r: exp) = new Mult { left = l; right = r }
   def Div(l: exp, r: exp) = new Div { left = l; right = r }
   
-  def runTests() {
+  def main(args: Array[String]): Unit = {
     val tests = List[Exp](
         Plus(Neg(Plus(1, 2)), 6),
         Mult(Plus(Neg(1), 5), Neg(Plus(4, 5))),
+        Sub(25, Plus(Neg(25), 80)),
         Div(25, Plus(2, 3)),
-        Plus(10, Plus(Plus("x", "y"), 3))
+        Plus(10, Plus(Plus("x", "y"), Plus(3, 25)))
     )
     
-    val expr: Exp = "x".eval()
     
     tests.foreach { test =>
       println("=========================")
-      println("EVAL:    " + test.eval())
-      println("PRINT:   " + test.print())
+      println("EVAL:        " + test.eval())
+      println("COMPRESS:    " + test.compress().print())
+      println("PRINT:       " + test.print())
       println("=========================")
     }
   }
