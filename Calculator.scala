@@ -69,14 +69,46 @@ object Calculator {
     }
   }
 
-  def eval(exp: Expr, variables: Map[String, Double] = Map[String, Double]()): Double = {
+  def evaluation(exp: Expr): Expr = {
     exp match {
-      case Number(v) => v
-      case Variable(v) => variables.get(v).get
-      case AddOp(left, right) => eval(left, variables) + eval(right, variables)
-      case SubtractOp(left, right) => eval(left, variables) - eval(right, variables)
-      case MultiplyOp(left, right) => eval(left, variables) * eval(right, variables)
-      case DivideOp(left, right) => eval(left, variables) / eval(right, variables)
+      case Number(v) => Number(v)
+      case Variable(v) => Variable(v)
+
+      case bo: BinaryOp =>
+        (evaluation(bo.left), evaluation(bo.right)) match {
+          case (Number(left), Number(right)) =>
+            bo match {
+              case op: AddOp => Number(left + right)
+              case op: SubtractOp => Number(left - right)
+              case op: MultiplyOp => Number(left * right)
+              case op: DivideOp => Number(left / right)
+            }
+
+          case (left, right) =>
+            bo match {
+              case op: AddOp => AddOp(left, right)
+              case op: SubtractOp => SubtractOp(left, right)
+              case op: MultiplyOp => MultiplyOp(left, right)
+              case op: DivideOp => DivideOp(left, right)
+            }
+        }
+    }
+  }
+
+  def replacement(exp: Expr, variables: Map[String, Double]): Expr = {
+    exp match {
+      case Number(v) => Number(v)
+      case Variable(v) =>
+        variables.get(v) map {
+          Number(_)
+        } getOrElse {
+          Variable(v)
+        }
+
+      case AddOp(left, right) => AddOp(replacement(left, variables), replacement(right, variables))
+      case SubtractOp(left, right) => SubtractOp(replacement(left, variables), replacement(right, variables))
+      case MultiplyOp(left, right) => MultiplyOp(replacement(left, variables), replacement(right, variables))
+      case DivideOp(left, right) => DivideOp(replacement(left, variables), replacement(right, variables))
     }
   }
 
@@ -95,7 +127,7 @@ object Calculator {
       AddOp(MultiplyOp("y", AddOp("x", 0)), MultiplyOp(SubtractOp("y", "y"), "y")) -> MultiplyOp("x", "y")
     )
 
-    val evaluateTestCases = List(
+    val evaluateTestCases = List[(Expr, Expr)](
       AddOp(1,2) -> 3,
       AddOp(2,-3) -> -1,
       SubtractOp(3,5) -> -2,
@@ -109,11 +141,13 @@ object Calculator {
       AddOp(AddOp(AddOp(1, 2), 3), AddOp(4, 5)) -> 15
     )
 
-    val variableTestCases = List(
+    val variableTestCases = List[(Expr, Expr)](
       AddOp("x", 5) -> 6,
       AddOp(3, "w") -> 2,
       MultiplyOp("w", 5) -> -5,
-      MultiplyOp("z", "y") -> 10
+      MultiplyOp("z", "y") -> 10,
+      AddOp("q", 5) -> AddOp("q", 5),
+      MultiplyOp(SubtractOp("q", "w"), "x") -> MultiplyOp(SubtractOp("q", "w"), 1)
     )
 
     val variableMapping = Map[String, Double](
@@ -139,7 +173,7 @@ object Calculator {
 
 
     evaluateTestCases map { pair =>
-      eval(pair._1) -> pair._2
+      evaluation(pair._1) -> pair._2
     } filter { pair =>
       pair._1 != pair._2
     } foreach { pair =>
@@ -151,7 +185,7 @@ object Calculator {
 
 
     variableTestCases map { pair =>
-      eval(pair._1, variableMapping) -> pair._2
+      evaluation(replacement(pair._1, variableMapping)) -> pair._2
     } filter { pair =>
       pair._1 != pair._2
     } foreach { pair =>
