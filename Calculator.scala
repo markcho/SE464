@@ -195,6 +195,8 @@ object Calculator {
     println("===========================")
     println("Completed Test Cases")
     println("===========================")
+    
+    OderskyCalculator.runTests();
   }
 }
 
