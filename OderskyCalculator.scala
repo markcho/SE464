@@ -83,7 +83,7 @@ trait BasePrinter extends Base {
 trait OperatorsPrinter extends BaseOperators with BasePrinter {
   type exp <: super[BasePrinter].Exp
   
-  protected def pb(n: exp): String = {
+  private def pb(n: exp): String = {
     n match {
       case b: Binary => "(" + b.print() + ")"
       case v => v.print()
@@ -146,46 +146,35 @@ trait OperatorsVariable extends OperatorsPrinter with BaseVariable {
   trait Neg extends super.Neg with Exp {
     override def compress() = {
       expr.compress() match {
-        case e: Num => Num(-e.value)
+        case e: Num => Num(eval())
         case v => Neg(v)
       }
     }
   }
   
-  trait Plus extends super.Plus with Exp {
-    override def compress(): exp = {
-      (left.compress(), right.compress()) match {
-        case (l: Num, r: Num) => Num(eval())
-        case v => Plus(v._1, v._2)
-      }
+  trait Binary extends super.Binary with Exp {
+    def binaryCompress(arg: (exp, exp) => exp): exp = {
+        (left.compress(), right.compress()) match {
+          case (l: Num, r: Num) => Num(eval())
+          case v => arg(v._1, v._2)
+        }
     }
   }
   
-  trait Sub extends super.Sub with Exp {
-    override def compress(): exp = {
-      (left.compress(), right.compress()) match {
-        case (l: Num, r: Num) => Num(eval())
-        case v => Sub(v._1, v._2)
-      }
-    }
+  trait Plus extends super.Plus with Binary {
+    override def compress() = binaryCompress(Plus(_, _))
   }
   
-  trait Mult extends super.Mult with Exp {
-    override def compress() = {
-      (left.compress(), right.compress()) match {
-        case (l: Num, r: Num) => Num(eval())
-        case v => Mult(v._1, v._2)
-      }
-    }
+  trait Sub extends super.Sub with Binary {
+    override def compress() = binaryCompress(Sub(_, _))
   }
   
-  trait Div extends super.Div with Exp {
-    override def compress() = {
-      (left.compress(), right.compress()) match {
-        case (l: Num, r: Num) => Num(eval())
-        case v => Div(v._1, v._2)
-      }
-    }
+  trait Mult extends super.Mult with Binary {
+    override def compress() = binaryCompress(Mult(_, _))
+  }
+  
+  trait Div extends super.Div with Binary {
+    override def compress() = binaryCompress(Div(_, _))
   }
 }
 
