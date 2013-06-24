@@ -7,10 +7,10 @@ object Calculator {
   implicit def stringToVariable(x: String) = Variable(x)
 
   def simplify(exp: Expr): Expr = {
-    def swap(mat: (Expr, Expr)): (Expr, Expr) = {
-      mat match {
+    def swap(e1: Expr, e2: Expr): (Expr, Expr) = {
+      (e1, e2) match {
         case (l: Expr, r: Variable) => (r, l)
-        case _ => mat
+        case _ => (e1, e2)
       }
     }
 
@@ -33,7 +33,7 @@ object Calculator {
         }
       }
       case SubtractOp(le, re) => {
-        val sw = swap(simplify(le), simplify(re))
+        val sw = (simplify(le), simplify(re))
         lazy val se = SubtractOp(sw._1, sw._2)
 
         sw match {
