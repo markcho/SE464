@@ -14,7 +14,6 @@ object Calculator {
       }
     }
 
-
     exp match {
       case AddOp(le, re) => {
         val sw = swap(simplify(le), simplify(re))
@@ -147,7 +146,7 @@ object Calculator {
       MultiplyOp("w", 5) -> -5,
       MultiplyOp("z", "y") -> 10,
       AddOp("q", 5) -> AddOp("q", 5),
-      MultiplyOp(SubtractOp("q", "w"), "x") -> MultiplyOp(SubtractOp("q", "w"), 1)
+      MultiplyOp(SubtractOp("q", "e"), "x") -> MultiplyOp(SubtractOp("q", "e"), 1)
     )
 
     val variableMapping = Map[String, Double](
