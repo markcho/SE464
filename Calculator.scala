@@ -16,55 +16,43 @@ object Calculator {
 
     exp match {
       case AddOp(le, re) => {
-        val sw = swap(simplify(le), simplify(re))
-        lazy val se = AddOp(sw._1, sw._2)
-
-        sw match {
+        swap(simplify(le), simplify(re)) match {
           case (Variable(s), Number(0)) => s
           case (Variable(s1), Variable(s2)) if s1 == s2 => MultiplyOp(s1, 2)
           case (MultiplyOp(l1, r1), MultiplyOp(l2, r2)) => {
             (swap(l1, r1), swap(l2, r2)) match {
               case ((Variable(l11), r11: Expr), (Variable(l12), r12: Expr)) if l11 == l12 => MultiplyOp(simplify(AddOp(r11, r12)), l11)
-              case _ => se
+              case v => AddOp(MultiplyOp(v._1._1, v._1._2), MultiplyOp(v._2._1, v._2._2))
             }
           }
-          case _ => se
+          case v => AddOp(v._1, v._2)
         }
       }
       case SubtractOp(le, re) => {
-        val sw = (simplify(le), simplify(re))
-        lazy val se = SubtractOp(sw._1, sw._2)
-
-        sw match {
+        (simplify(le), simplify(re)) match {
           case (Variable(s1), Variable(s2)) if s1 == s2 => 0
-          case _ => se
+          case v => SubtractOp(v._1, v._2)
         }
       }
       case MultiplyOp(le, re) => {
-        val sw = swap(simplify(le), simplify(re))
-        lazy val se = MultiplyOp(sw._1, sw._2)
-
-        sw match {
+        swap(simplify(le), simplify(re)) match {
           case (Variable(s1), Number(1)) => s1
-          case _ => se
+          case v => MultiplyOp(v._1, v._2)
         }
       }
       case DivideOp(le, re) => {
-        val sw = (simplify(le), simplify(re))
-        lazy val se = DivideOp(sw._1, sw._2)
-
-        sw match {
+        (simplify(le), simplify(re)) match {
           case (Variable(s1), Number(1)) => s1
           case (MultiplyOp(l1, r1), Variable(s1)) => {
             (swap(l1, r1)) match {
               case (Variable(l11), r11: Expr) if l11 == s1 => r11
-              case _ => se
+              case v => DivideOp(MultiplyOp(v._1, v._2), s1)
             }
           }
-          case _ => se
+          case v => DivideOp(v._1, v._2)
         }
       }
-      case _ => exp
+      case v => v
     }
   }
 
