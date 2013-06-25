@@ -221,7 +221,7 @@ trait BaseSimplifier extends OperatorsVariable {
         case (l: Mult, r: Mult) => {
           (l.swap(), r.swap()) match {
             case ((l1: Var, r1), (l2: Var, r2)) if l1.term == l2.term =>
-              Mult(Plus(r1, r2), Var(l1.term)).simplify()
+              Mult(Plus(r1, r2).simplify(), Var(l1.term))
             case v => Plus(Mult(v._1._1, v._1._2), Mult(v._2._1, v._2._2))
           }
         }
@@ -304,14 +304,14 @@ object OderskyCalculator extends BaseSimplifier {
       Plus(0, "x") -> "x",
       Plus("x", 0) -> "x",
       Plus("y", "y") -> Mult("y", 2),
-      Plus(Mult("y", 2), Mult(8, "y")) -> Mult("y", Plus(2.0, 8.0)),
+      Plus(Mult("y", 2), Mult(8, "y")) -> Mult(Plus(2.0, 8.0), "y"),
       Sub("x", "x") -> 0,
       Div(Mult("y", 2), "y") -> 2,
       Div("x", 1) -> "x",
       Div(1, "x") -> Div(1, "x"),
       Mult(1, "x") -> "x",
       Mult("x", 1) -> "x",
-      Plus(Mult("y", Plus("x", 0)), Mult(Sub("y", "y"), "y")) -> Mult("y", "x")
+      Plus(Mult("y", Plus("x", 0)), Mult(Sub("y", "y"), "y")) -> Mult("x", "y")
     )
 
     val evaluateTestCases = List[(exp, exp)](
